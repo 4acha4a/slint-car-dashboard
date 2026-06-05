@@ -4,6 +4,9 @@ A Rust + Slint desktop application that simulates a vehicle dashboard with speed
 
 The project is built as a small interactive dashboard simulator. It models basic vehicle behavior such as engine startup, acceleration, braking, idle mode, fuel consumption, temperature changes, and gear-dependent RPM behavior.
 
+## Screenshot
+![Vehicle dashboard screenshot](screenshot.png)
+
 ## Features
 
 - Interactive vehicle dashboard UI built with Slint
@@ -70,5 +73,3 @@ cargo run
     ├── ui.rs
     └── vehicle.rs
 ```
-## Screenshot
-![Vehicle dashboard screenshot](screenshot.png)
