@@ -64,6 +64,6 @@ The project is built as a small interactive dashboard simulator. It models basic
     │   └── main.slint
     ├── ui.rs
     └── vehicle.rs
-
+```
 ## Screenshot
 ![Vehicle dashboard screenshot](screenshot.png)
