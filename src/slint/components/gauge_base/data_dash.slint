@@ -1,0 +1,32 @@
+
+export component DataDash {
+    in-out property <length> radius;
+    in property <length> transform_origin_x;
+    in property <float> value;
+    in property <int> min-value;
+    in property <int> max-value;
+    in property <bool> has-text: false;
+    in property <bool> big-point: false;
+    in property <bool> is-red: false;
+    in property <bool> is-blue: false;
+    in property <int> start-from-degree;
+    in property <int> end-at-degree;
+    in property <length> font-size: 9px;
+    in property <angle> angle: 1deg * (end-at-degree - start-from-degree) * (value - min-value) / (max-value - min-value);
+    Rectangle {
+        width: big-point ? radius * 0.07 : radius * 0.05;
+        height: is-red || is-blue ? 11px: big-point ? 2px : 0.5px;
+        y: radius / 2;
+        x: 0px;
+        background: is-red ? red : is-blue ? blue : white;
+        transform_rotation: start-from-degree * 1deg + 1deg * (end-at-degree - start-from-degree) * (value - min-value) / (max-value - min-value);
+        transform_origin: {x: transform_origin_x, y: 0px};
+        Text {
+            x: parent.x + parent.width * 1.5;
+            text: has-text ? value : "";
+            font_size: font-size;
+            transform_rotation: -parent.transform_rotation;
+            color: white;
+        }
+    }
+}

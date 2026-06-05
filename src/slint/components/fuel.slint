@@ -1,0 +1,20 @@
+import { SmallGauge } from "gauge_base/small_gauge.slint";
+import { DashboardState } from "dashboard_state.slint";
+
+export global FuelState {
+    in-out property <float> fuel: 0;
+    out property <float> max_fuel: 100;
+}
+
+export component FuelGauge inherits SmallGauge {
+    dashboard_value: DashboardState.is_engine_on ? FuelState.fuel : 0;
+    dashboard_max_value: FuelState.max_fuel;
+    start-from-degree: 15;
+    end-at-degree: 165;
+    pointed-values: [0, 30, 60, 100];
+    unpointed-values: [15, 45, 75, 90];
+    font-size: 6px;
+    image: @image-url("../../res/fuel.png");
+    dashboard_min_value: 0;
+    image-color: DashboardState.is_engine_on ? (FuelState.fuel < 0.2 * FuelState.max_fuel ? darkorange : white) : white;
+}

@@ -1,0 +1,21 @@
+import { SmallGauge } from "gauge_base/small_gauge.slint";
+import { DashboardState } from "dashboard_state.slint";
+export global CoolerState {
+    in-out property <int> temperature: 130;
+    out property <int> min_temperature: 40;
+    out property <int> max_temperature: 130;
+}
+
+export component CoolerGauge inherits SmallGauge {
+    dashboard_value: DashboardState.is_engine_on ? CoolerState.temperature : 0;
+    dashboard_max_value: CoolerState.max_temperature;
+    dashboard_min_value: CoolerState.min_temperature;
+    start-from-degree: 15;
+    end-at-degree: 165;
+    init-values: [40, 70, 100, 130];
+    blue-values: [50];
+    red-values: [130];
+    font-size: 6px;
+    image: @image-url("../../res/cooler.png");
+    image-color: DashboardState.is_engine_on ? (CoolerState.temperature > 0.85 * CoolerState.max_temperature ? red : CoolerState.temperature < 1.15 * CoolerState.min_temperature ? blue : white) : white;
+}

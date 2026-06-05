@@ -1,0 +1,94 @@
+import { DataDash } from "./data_dash.slint";
+
+export component BigGauge {
+    in-out property <length> radius;
+    in property <float> dashboard_value;
+    in property <float> dashboard_max_value;
+    in property <[float]> pointed-values;
+    in property <[float]> unpointed-values;
+    in property <[float]> red-values;
+    in property <[float]> init-values;
+    in property <int> start-from-degree: -45;
+    in property <int> end-at-degree: 225;
+    in property <string> bottom-text: "";
+    circle:=Rectangle {
+        width: radius;
+        height: radius;
+        background: black;
+        border_radius: radius;
+    }
+    Rectangle {
+        width: radius * 0.15;
+        height: radius * 0.15;
+        background: grey;
+        border_radius: radius;
+    }
+    for i in red-values: DataDash {
+        start-from-degree: start-from-degree;
+        end-at-degree: end-at-degree;
+        x: circle.x;
+        y: circle.y;
+        radius: radius;
+        value: i;
+        has-text: false;
+        is-red: true;
+        max_value: dashboard_max_value;
+        transform_origin_x: -circle.x;
+    }
+    for i in pointed-values: DataDash {
+        start-from-degree: start-from-degree;
+        end-at-degree: end-at-degree;
+        x: circle.x;
+        y: circle.y;
+        radius: radius;
+        value: i;
+        big-point: true;
+        has-text: true;
+        max_value: dashboard_max_value;
+        transform_origin_x: -circle.x;
+    }
+    for i in init-values: DataDash {
+        start-from-degree: start-from-degree;
+        end-at-degree: end-at-degree;
+        x: circle.x;
+        y: circle.y;
+        radius: radius;
+        value: i;
+        big-point: true;
+        max_value: dashboard_max_value;
+        transform_origin_x: -circle.x;
+    }
+    for i in unpointed-values: DataDash {
+        start-from-degree: start-from-degree;
+        end-at-degree: end-at-degree;
+        x: circle.x;
+        y: circle.y;
+        radius: radius;
+        value: i;
+        big-point: false;
+        has-text: false;
+        max_value: dashboard_max_value;
+        transform_origin_x: -circle.x;
+    }
+    Rectangle {
+        x: circle.x + radius / 2;
+        y: 2 * circle.y;
+        Text {
+            text: bottom-text;
+            font_size: 8px;
+            opacity: 0.7;
+            color: white;
+            horizontal_alignment: center;
+            vertical_alignment: center;
+        }
+    }
+    Rectangle {
+        width: radius / 1.8;
+        height: 2px;
+        x: -radius / 2.4;
+        background: white;
+        border_radius: 0px;
+        transform_rotation: dashboard_value > dashboard_max_value ? end-at-degree * 1deg : start-from-degree * 1deg + 1deg *(end-at-degree - start-from-degree) * dashboard_value / dashboard_max_value;
+        transform_origin: {x: -self.x, y: 0px};
+    }
+}

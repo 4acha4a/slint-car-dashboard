@@ -1,0 +1,16 @@
+import { DashboardState } from "dashboard_state.slint";
+
+export global ShifterState {
+    in-out property <string> current-gear: "6";
+    in-out property <int> inner-gear;
+    out property <int> max-gear;
+}
+
+export component Shifter {
+    Text {
+        text: ShifterState.current-gear;
+        color: white;
+        font-size: 25px;
+        visible: DashboardState.is_engine_on;
+    }
+}

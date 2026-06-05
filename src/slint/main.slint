@@ -1,0 +1,123 @@
+import { Speedometer } from "components/speedometer.slint";
+import { Tachometer } from "components/tachometer.slint";
+import { FuelGauge } from "components/fuel.slint";
+import { CoolerGauge } from "components/cooler.slint";
+
+import { DashboardState } from "components/dashboard_state.slint";
+import { CoolerState } from "components/cooler.slint";
+import { FuelState } from "components/fuel.slint";
+import { TachometerState } from "components/tachometer.slint";
+import { SpeedometerState } from "components/speedometer.slint";
+import { Shifter } from "components/shifter.slint";
+import { ShifterState } from "components/shifter.slint";
+
+export { DashboardState, CoolerState, FuelState, TachometerState, SpeedometerState, ShifterState }
+
+component Dashboard {
+    width: 420px;
+    height: 180px;
+    property <length> bigger-circle-radius: 140px;
+    property <length> circle-radius: 70px;
+    HorizontalLayout {
+        y: self.height / 2 - bigger-circle-radius / 2 - 35px;
+        alignment: center;
+        spacing: 150px;
+        Speedometer {
+            radius: bigger-circle-radius;
+        }
+        Tachometer {
+            radius: bigger-circle-radius;
+        }
+    }
+    HorizontalLayout {
+        y: self.height / 2 - circle-radius / 2 - 5px;
+        alignment: center;
+        spacing: 330px;
+        FuelGauge {
+            radius: circle-radius;
+        }
+
+        CoolerGauge {
+            radius: circle-radius;
+        }
+    }
+}
+
+export component AppWindow inherits Window {
+    width: 1600px;
+    height: 900px;
+    title: "Speedometer";
+
+    Image {
+        x: 0px;
+        y: 0px;
+        width: parent.width;
+        height: parent.height;
+        source: @image-url("../res/interior.png");
+        image-fit: cover;
+    }
+    Shifter {
+        x: 710px;
+        y: 393px;
+    }
+    Dashboard {
+        x: 510px;
+        y: 253px;
+    }
+
+    callback key-pressed(key: string);
+    callback key-released();
+    callback w-held();
+    callback quit-requested();
+    FocusScope {
+        width: parent.width;
+        height: parent.height;
+
+        KeyBinding {
+            keys: @keys(Meta + C);
+            activated => { quit-requested(); }
+        }
+
+        key-pressed(event) => {
+            if event.text == Key.W {
+                root.key-pressed("w");
+                accept
+            } else if event.text == Key.S {
+                root.key-pressed("s");
+                accept
+            } else if event.text == Key.E {
+                root.key-pressed("e");
+                accept
+            } else if event.text == Key.R {
+                root.key-pressed("r");
+                accept
+            } else if event.text == Key.Shift {
+                root.key-pressed("shift");
+                accept
+            } else if event.text == Key.Meta {
+                root.key-pressed("alt");
+                accept
+            } else {
+                reject
+            }
+        }
+        key-released(event) => {
+            if event.text == Key.W {
+                root.key-released();
+                accept
+            } else if event.text == Key.S {
+                root.key-released();
+                accept
+            } else if event.text == Key.E {
+                root.key-released();
+                accept
+            } else if event.text == Key.R {
+                root.key-released();
+                accept
+            } else {
+                reject
+            }
+        }
+    }
+
+}

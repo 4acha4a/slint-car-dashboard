@@ -1,0 +1,21 @@
+import { BigGauge } from "gauge_base/big_gauge.slint";
+import { DashboardState } from "dashboard_state.slint";
+
+export global TachometerState {
+    in-out property <float> rate: 0;
+    out property <float> max_rate: 6;
+}
+
+export component Tachometer inherits BigGauge {
+    dashboard_value: DashboardState.is_engine_on ? TachometerState.rate: 0;
+    dashboard_max_value: TachometerState.max_rate;
+    start-from-degree: -30;
+    end-at-degree: 210;
+    pointed-values: [0, 1, 2, 3, 4, 5, 6];
+    unpointed-values: [0.78, 1.5, 2.5, 3.5, 4.5, 5.5];
+    red-values: [5.8, 5.9, 5.1, 5.2, 5.3, 5.4, 5.5, 5.6];
+    bottom-text: "x1000 rpm";
+    animate dashboard_value {
+        easing: ease-out-bounce;
+    }
+}
