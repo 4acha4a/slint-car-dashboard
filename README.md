@@ -29,6 +29,11 @@ The project is built as a small interactive dashboard simulator. It models basic
 | `R` | Refuel |
 | `Meta + C` | Quit application |
 
+## Run
+```
+cargo run
+```
+
 ## Tech Stack
 
 - Rust
