@@ -39,21 +39,28 @@ The project is built as a small interactive dashboard simulator. It models basic
 
 ```text
 .
-├── src
-│   ├── main.rs
-│   ├── vehicle
-│   │   ├── mod.rs
-│   │   └── model.rs
-│   └── ui
-│       ├── appwindow.slint
-│       └── components
-│           ├── speedometer.slint
-│           ├── tachometer.slint
-│           ├── fuel.slint
-│           ├── cooler.slint
-│           ├── shifter.slint
-│           └── dashboard_state.slint
-├── res
-│   └── interior.png
+├── build.rs
 ├── Cargo.toml
-└── README.md
+├── LICENSE.txt
+├── README.md
+└── src
+    ├── main.rs
+    ├── res
+    │   ├── cooler.png
+    │   ├── fuel.png
+    │   └── interior.png
+    ├── slint
+    │   ├── components
+    │   │   ├── cooler.slint
+    │   │   ├── dashboard_state.slint
+    │   │   ├── fuel.slint
+    │   │   ├── gauge_base
+    │   │   │   ├── big_gauge.slint
+    │   │   │   ├── data_dash.slint
+    │   │   │   └── small_gauge.slint
+    │   │   ├── shifter.slint
+    │   │   ├── speedometer.slint
+    │   │   └── tachometer.slint
+    │   └── main.slint
+    ├── ui.rs
+    └── vehicle.rs
