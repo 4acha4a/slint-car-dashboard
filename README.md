@@ -22,6 +22,15 @@ The project is built as a small interactive dashboard simulator. It models basic
 - Basic automatic gear behavior
 - Background update loop using Slint timers
 
+## Roadmap
+
+- [ ] Add asynchronous telemetry streaming to a Rust backend
+- [ ] Add a web dashboard for live vehicle metrics
+- [ ] Improve the RPM and gear-shifting simulation model
+- [ ] Add unit tests for the vehicle simulation logic
+- [ ] Add embedded portability notes
+- [ ] Add a demo GIF showing dashboard interaction
+
 ## Controls
 
 | Key | Action |
