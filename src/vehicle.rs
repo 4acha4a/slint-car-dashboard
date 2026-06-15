@@ -2,6 +2,9 @@ pub const IDLE_RATE: f32 = 0.8;
 pub const MAX_RATE: f32 = 5.5;
 const DT: f32 = 0.016;
 
+const MAX_FUEL: f32 = 100.0;
+const INITIAL_TEMPERATURE: f32 = 70.0;
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum ShifterGear {
     Parking,
@@ -22,7 +25,7 @@ pub struct Vehicle {
 
 impl Vehicle {
     pub fn new() -> Self {
-        Vehicle { fuel: 100.0, temperature: 70.0, gear: ShifterGear::Parking, speed: 0.0, throttle: 0.0, rate: 0.0, brake: 0.0, is_on: false }
+        Vehicle { fuel: MAX_FUEL, temperature: INITIAL_TEMPERATURE, gear: ShifterGear::Parking, speed: 0.0, throttle: 0.0, rate: 0.0, brake: 0.0, is_on: false }
     }
 
     pub fn consume_fuel(&mut self, amount: f32) {
@@ -34,13 +37,13 @@ impl Vehicle {
     }
 
     pub fn refuel(&mut self, amount: f32) {
-        if self.get_fuel() >= 100.0 {
+        if self.get_fuel() >= MAX_FUEL {
             println!("Cannot refuel: fuel tank is full");
             return;
         }
         self.fuel += amount;
-        if self.fuel > 100.0 {
-            self.fuel = 100.0;
+        if self.fuel > MAX_FUEL {
+            self.fuel = MAX_FUEL;
         }
     }
 
@@ -351,5 +354,98 @@ impl Vehicle {
         if self.out_of_fuel() {
             self.turn_off();
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_vehicle_init() {
+        let vehicle = Vehicle::new();
+
+        assert_eq!(vehicle.get_fuel(), MAX_FUEL);
+        assert_eq!(vehicle.get_temperature(), INITIAL_TEMPERATURE);
+        assert_eq!(vehicle.get_gear_str(), "P");
+        assert_eq!(vehicle.get_speed(), 0.0);
+        assert_eq!(vehicle.is_on(), false);
+    }
+
+    #[test]
+    fn test_vehicle_ignition() {
+        let mut vehicle = Vehicle::new();
+
+        vehicle.ignition();
+        assert_eq!(vehicle.is_on(), true);
+
+        vehicle.ignition();
+        assert_eq!(vehicle.is_on(), false);
+    }
+
+    #[test]
+    fn test_vehicle_refuel() {
+        let mut vehicle = Vehicle::new();
+
+        vehicle.consume_fuel(50.0);
+        assert_eq!(vehicle.get_fuel(), MAX_FUEL - 50.0);
+
+        vehicle.refuel(30.0);
+        assert_eq!(vehicle.get_fuel(), MAX_FUEL - 20.0);
+
+        vehicle.refuel(30.0);
+        assert_eq!(vehicle.get_fuel(), MAX_FUEL);
+    }
+
+    #[test]
+    fn test_vehicle_accelerate() {
+        let mut vehicle = Vehicle::new();
+        vehicle.ignition();
+        vehicle.shift_gear_up();
+        assert_eq!(vehicle.get_speed(), 0.0);
+        vehicle.accelerate();
+        assert!(vehicle.get_speed() > 0.0);
+        assert!(vehicle.get_fuel() < MAX_FUEL);
+    }
+
+    #[test]
+    fn test_vehicle_brake() {
+        let mut vehicle = Vehicle::new();
+        vehicle.ignition();
+        vehicle.shift_gear_up();
+        vehicle.accelerate();
+        assert!(vehicle.get_speed() > 0.0);
+        let old_speed = vehicle.get_speed();
+        vehicle.brake();
+        assert!(vehicle.get_speed() < old_speed);
+        assert!(vehicle.get_fuel() < MAX_FUEL);
+    }
+
+    #[test]
+    fn test_vehicle_idle_brake() {
+        let mut vehicle = Vehicle::new();
+        vehicle.ignition();
+        vehicle.shift_gear_up();
+        vehicle.accelerate();
+        assert!(vehicle.get_speed() > 0.0);
+        let old_speed = vehicle.get_speed();
+        vehicle.idle_brake();
+        assert!(vehicle.get_speed() < old_speed);
+        assert!(vehicle.get_fuel() < MAX_FUEL);
+    }
+
+    #[test]
+    fn test_vehicle_shift_gear() {
+        let mut vehicle = Vehicle::new();
+        vehicle.ignition();
+        assert_eq!(vehicle.get_gear_str(), "P");
+        vehicle.shift_gear_up();
+        assert_eq!(vehicle.get_gear_str(), "1");
+        vehicle.shift_gear_up();
+        assert_eq!(vehicle.get_gear_str(), "2");
+        vehicle.shift_gear_down();
+        assert_eq!(vehicle.get_gear_str(), "1");
+        vehicle.shift_gear_down();
+        assert_eq!(vehicle.get_gear_str(), "P");
     }
 }
