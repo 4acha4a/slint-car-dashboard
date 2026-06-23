@@ -1,3 +1,5 @@
+use rand::RngExt;
+
 pub const IDLE_RATE: f32 = 0.8;
 pub const MAX_RATE: f32 = 5.5;
 const DT: f32 = 0.016;
@@ -5,35 +7,101 @@ const DT: f32 = 0.016;
 const MAX_FUEL: f32 = 100.0;
 const INITIAL_TEMPERATURE: f32 = 70.0;
 
-#[derive(Clone, Debug, PartialEq)]
+#[cfg(feature = "web")]
+use serde::{Deserialize, Serialize};
+
+#[cfg_attr(feature = "web", derive(Deserialize, Serialize))]
+#[derive(Clone, PartialEq)]
 pub enum ShifterGear {
     Parking,
     Neutral,
     Drive(u8),
 }
 
-pub struct Vehicle {
+impl Default for ShifterGear {
+    fn default() -> Self {
+        ShifterGear::Parking
+    }
+}
+
+#[cfg_attr(feature = "web", derive(Deserialize, Serialize))]
+#[derive(Clone, PartialEq)]
+pub struct VehicleData {
     fuel: f32,
     temperature: f32,
-    gear: ShifterGear,
     speed: f32,
     rate: f32,
+    gear: ShifterGear,
     is_on: bool,
+}
+
+impl Default for VehicleData {
+    fn default() -> Self {
+        VehicleData {
+            fuel: MAX_FUEL,
+            temperature: INITIAL_TEMPERATURE,
+            speed: 0.0,
+            rate: 0.0,
+            gear: ShifterGear::Parking,
+            is_on: false,
+        }
+    }
+}
+
+#[derive(Default)]
+pub struct Vehicle {
+    data: VehicleData,
     throttle: f32,
     brake: f32,
 }
 
 impl Vehicle {
-    pub fn new() -> Self {
-        Vehicle { fuel: MAX_FUEL, temperature: INITIAL_TEMPERATURE, gear: ShifterGear::Parking, speed: 0.0, throttle: 0.0, rate: 0.0, brake: 0.0, is_on: false }
+    pub fn consume_fuel(&mut self, amount: f32) {
+        if self.data.fuel >= amount {
+            self.data.fuel -= amount;
+        } else {
+            self.data.fuel = 0.0;
+        }
     }
 
-    pub fn consume_fuel(&mut self, amount: f32) {
-        if self.fuel >= amount {
-            self.fuel -= amount;
-        } else {
-            self.fuel = 0.0;
+    pub fn update_needed(&self, other: &VehicleData) -> bool {
+        self.data != *other
+    }
+
+    fn limit_rate(&mut self, rate: f32, target: f32) {
+        const TOLERANCE: f32 = 0.015;
+        if (rate >= target - TOLERANCE) && (rate <= target + TOLERANCE) {
+            let num = rand::rng().random_range(rate * (1.0 - TOLERANCE)..rate * (1.0 + TOLERANCE));
+            self.data.rate = num;
         }
+    }
+
+    pub fn get_data(&self) -> VehicleData {
+        self.data.clone()
+    }
+
+    pub fn is_moving(&self) -> bool {
+        self.data.speed > 0.0 && self.get_gear() != &ShifterGear::Parking
+    }
+
+    pub fn goggle_rate(&mut self) {
+        // if !self.is_on() {
+        //     self.data.rate = 0.0;
+        //     return;
+        // }
+        self.limit_idle_rate();
+        self.limit_max_rate();
+    }
+
+    fn limit_idle_rate(&mut self) {
+        if !(self.get_gear().eq(&ShifterGear::Drive(1)) || self.get_gear().eq(&ShifterGear::Parking)) {
+            return;
+        }
+        self.limit_rate(self.data.rate, IDLE_RATE);
+    }
+
+    fn limit_max_rate(&mut self) {
+        self.limit_rate(self.data.rate, MAX_RATE);
     }
 
     pub fn refuel(&mut self, amount: f32) {
@@ -41,29 +109,29 @@ impl Vehicle {
             println!("Cannot refuel: fuel tank is full");
             return;
         }
-        self.fuel += amount;
-        if self.fuel > MAX_FUEL {
-            self.fuel = MAX_FUEL;
+        self.data.fuel += amount;
+        if self.data.fuel > MAX_FUEL {
+            self.data.fuel = MAX_FUEL;
         }
     }
 
     pub fn get_fuel(&self) -> f32 {
-        self.fuel
+        self.data.fuel
     }
 
     pub fn is_on(&self) -> bool {
-        self.is_on
+        self.data.is_on
     }
 
     pub fn turn_on(&mut self) {
-        self.is_on = true;
+        self.data.is_on = true;
     }
 
     pub fn out_of_fuel(&self) -> bool {
-        self.fuel == 0.0
+        self.data.fuel == 0.0
     }
 
-    pub fn ignition(&mut self) {
+    pub fn toggle_power(&mut self) {
         if self.is_on() {
             self.turn_off();
             println!("Vehicle turned off");
@@ -79,22 +147,22 @@ impl Vehicle {
     }
 
     pub fn turn_off(&mut self) {
-        self.is_on = false;
-        self.speed = 0.0;
-        self.rate = 0.0;
-        self.gear = ShifterGear::Parking;
+        self.data.is_on = false;
+        self.data.speed = 0.0;
+        self.data.rate = 0.0;
+        self.data.gear = ShifterGear::Parking;
     }
 
     pub fn get_temperature(&self) -> f32 {
-        self.temperature
+        self.data.temperature
     }
 
     pub fn get_speed(&self) -> f32 {
-        self.speed
+        self.data.speed
     }
 
     pub fn get_gear_str(&self) -> &str {
-        match self.gear {
+        match self.data.gear {
             ShifterGear::Parking => "P",
             ShifterGear::Neutral => "N",
             ShifterGear::Drive(d) => match d {
@@ -110,32 +178,32 @@ impl Vehicle {
     }
 
     pub fn get_gear(&self) -> &ShifterGear {
-        &self.gear
+        &self.data.gear
     }
 
     pub fn is_drive(&self) -> bool {
-        self.gear != ShifterGear::Parking && self.gear != ShifterGear::Neutral
+        self.data.gear != ShifterGear::Parking && self.data.gear != ShifterGear::Neutral
     }
 
     pub fn set_rate(&mut self, rate: f32) {
-        self.rate = rate;
+        self.data.rate = rate;
     }
 
     pub fn get_rate(&self) -> f32 {
-        self.rate
+        self.data.rate
     }
 
     pub fn shift_gear_up(&mut self) {
-        self.gear = match self.gear {
+        self.data.gear = match self.data.gear {
             ShifterGear::Parking => ShifterGear::Drive(1),
             ShifterGear::Neutral => ShifterGear::Drive(1),
             ShifterGear::Drive(n) if n < 6 => ShifterGear::Drive(n + 1),
-            _ => self.gear.clone(),
+            _ => self.data.gear.clone(),
         };
     }
 
     pub fn shift_gear_down(&mut self) {
-        self.gear = match self.gear {
+        self.data.gear = match self.data.gear {
             ShifterGear::Drive(n) if n > 1 => ShifterGear::Drive(n - 1),
             ShifterGear::Neutral => ShifterGear::Parking,
             _ => ShifterGear::Parking,
@@ -164,7 +232,7 @@ impl Vehicle {
         }
 
         self.consume_fuel(0.0005 + self.throttle * 0.0015);
-        let target_rate = match self.gear {
+        let target_rate = match self.data.gear {
             ShifterGear::Neutral | ShifterGear::Parking => {
                 IDLE_RATE + self.throttle * 4.0
             }
@@ -174,44 +242,44 @@ impl Vehicle {
             }
 
             ShifterGear::Drive(2) => {
-                IDLE_RATE + self.speed * 0.105
+                IDLE_RATE + self.data.speed * 0.12
             }
 
             ShifterGear::Drive(3) => {
-                IDLE_RATE + self.speed * 0.08
+                IDLE_RATE + self.data.speed * 0.05
             }
 
             ShifterGear::Drive(4) => {
-                IDLE_RATE + self.speed * 0.03
+                IDLE_RATE + self.data.speed * 0.03
             }
 
             ShifterGear::Drive(5) => {
-                IDLE_RATE + self.speed * 0.023
+                IDLE_RATE + self.data.speed * 0.023
             }
 
             ShifterGear::Drive(6) => {
-                IDLE_RATE + self.speed * 0.011
+                IDLE_RATE + self.data.speed * 0.011
             }
 
             _ => {
-                IDLE_RATE + self.speed * 0.02
+                IDLE_RATE + self.data.speed * 0.02
             }
         };
 
-        self.rate += (target_rate - self.rate) * 8.0 * DT;
+        self.data.rate += (target_rate - self.data.rate) * 8.0 * DT;
 
-        if self.rate < IDLE_RATE {
-            self.rate = IDLE_RATE;
-        }
+        // if self.data.rate < IDLE_RATE {
+        //     self.data.rate = IDLE_RATE;
+        // }
 
-        if self.rate > MAX_RATE {
-            self.rate = MAX_RATE;
+        if self.data.rate > MAX_RATE {
+            self.data.rate = MAX_RATE;
         }
 
         if self.is_drive() {
-            let acceleration = match self.gear {
+            let acceleration = match self.data.gear {
                 ShifterGear::Drive(1) => 32.0,
-                ShifterGear::Drive(2) => 26.0,
+                ShifterGear::Drive(2) => 23.0,
                 ShifterGear::Drive(3) => 20.0,
                 ShifterGear::Drive(4) => 15.0,
                 ShifterGear::Drive(5) => 11.0,
@@ -219,19 +287,8 @@ impl Vehicle {
                 _ => 0.0,
             };
 
-            self.speed += self.throttle * acceleration * DT;
+            self.data.speed += self.throttle * acceleration * DT;
         }
-
-        println!(
-            "Accelerating: fuel={}, temp={}, gear={:?}, speed={}, rate={}, throttle={}, brake={}",
-            self.fuel,
-            self.temperature,
-            self.gear,
-            self.speed,
-            self.rate,
-            self.throttle,
-            self.brake
-        );
     }
 
     pub fn brake(&mut self) {
@@ -253,48 +310,48 @@ impl Vehicle {
 
         let brake_power = 45.0;
 
-        self.speed -= self.brake * brake_power * DT;
+        self.data.speed -= self.brake * brake_power * DT;
 
-        if self.speed < 0.0 {
-            self.speed = 0.0;
+        if self.data.speed < 0.0 {
+            self.data.speed = 0.0;
         }
 
-        let target_rate = match self.gear {
+        let target_rate = match self.data.gear {
             ShifterGear::Parking | ShifterGear::Neutral => IDLE_RATE,
 
-            ShifterGear::Drive(1) => IDLE_RATE + self.speed * 0.08,
-            ShifterGear::Drive(2) => IDLE_RATE + self.speed * 0.055,
-            ShifterGear::Drive(3) => IDLE_RATE + self.speed * 0.04,
-            ShifterGear::Drive(4) => IDLE_RATE + self.speed * 0.03,
-            ShifterGear::Drive(5) => IDLE_RATE + self.speed * 0.02,
-            ShifterGear::Drive(6) => IDLE_RATE + self.speed * 0.015,
+            ShifterGear::Drive(1) => IDLE_RATE + self.data.speed * 0.08,
+            ShifterGear::Drive(2) => IDLE_RATE + self.data.speed * 0.055,
+            ShifterGear::Drive(3) => IDLE_RATE + self.data.speed * 0.04,
+            ShifterGear::Drive(4) => IDLE_RATE + self.data.speed * 0.03,
+            ShifterGear::Drive(5) => IDLE_RATE + self.data.speed * 0.02,
+            ShifterGear::Drive(6) => IDLE_RATE + self.data.speed * 0.015,
 
             _ => IDLE_RATE,
         };
 
-        self.rate += (target_rate - self.rate) * 5.0 * DT;
+        self.data.rate += (target_rate - self.data.rate) * 5.0 * DT;
 
-        if self.rate < IDLE_RATE && self.is_on() {
-            self.rate = IDLE_RATE;
-        }
+        // if self.data.rate < IDLE_RATE && self.is_on() {
+        //     self.data.rate = IDLE_RATE;
+        // }
 
-        if self.speed == 0.0 && self.is_on() {
-            self.rate = IDLE_RATE;
-        }
+        // if self.data.speed == 0.0 && self.is_on() {
+        //     self.data.rate = IDLE_RATE;
+        // }
     }
 
     pub fn idle_brake(&mut self) {
         if !self.is_on() {
-            self.rate -= 3.0 * DT;
+            self.data.rate -= 3.0 * DT;
 
-            if self.rate < 0.0 {
-                self.rate = 0.0;
+            if self.data.rate < 0.0 {
+                self.data.rate = 0.0;
             }
 
-            self.speed -= 4.0 * DT;
+            self.data.speed -= 4.0 * DT;
 
-            if self.speed < 0.0 {
-                self.speed = 0.0;
+            if self.data.speed < 0.0 {
+                self.data.speed = 0.0;
             }
 
             return;
@@ -306,7 +363,7 @@ impl Vehicle {
             self.throttle = 0.0;
         }
 
-        let deceleration = match self.gear {
+        let deceleration = match self.data.gear {
             ShifterGear::Parking => 20.0,
             ShifterGear::Neutral => 2.0,
 
@@ -320,34 +377,34 @@ impl Vehicle {
             _ => 3.0,
         };
 
-        self.speed -= deceleration * DT;
+        self.data.speed -= deceleration * DT;
 
-        if self.speed < 0.0 {
-            self.speed = 0.0;
+        if self.data.speed < 0.0 {
+            self.data.speed = 0.0;
         }
 
-        let target_rate = match self.gear {
+        let target_rate = match self.data.gear {
             ShifterGear::Parking | ShifterGear::Neutral => IDLE_RATE,
 
-            ShifterGear::Drive(1) => IDLE_RATE + self.speed * 0.08,
-            ShifterGear::Drive(2) => IDLE_RATE + self.speed * 0.055,
-            ShifterGear::Drive(3) => IDLE_RATE + self.speed * 0.04,
-            ShifterGear::Drive(4) => IDLE_RATE + self.speed * 0.03,
-            ShifterGear::Drive(5) => IDLE_RATE + self.speed * 0.02,
-            ShifterGear::Drive(6) => IDLE_RATE + self.speed * 0.015,
+            ShifterGear::Drive(1) => IDLE_RATE + self.data.speed * 0.08,
+            ShifterGear::Drive(2) => IDLE_RATE + self.data.speed * 0.055,
+            ShifterGear::Drive(3) => IDLE_RATE + self.data.speed * 0.04,
+            ShifterGear::Drive(4) => IDLE_RATE + self.data.speed * 0.03,
+            ShifterGear::Drive(5) => IDLE_RATE + self.data.speed * 0.02,
+            ShifterGear::Drive(6) => IDLE_RATE + self.data.speed * 0.015,
 
             _ => IDLE_RATE,
         };
 
-        self.rate += (target_rate - self.rate) * 4.0 * DT;
+        self.data.rate += (target_rate - self.data.rate) * 4.0 * DT;
 
-        if self.rate <= IDLE_RATE {
-            self.rate = IDLE_RATE;
-        }
+        // if self.data.rate <= IDLE_RATE {
+        //     self.data.rate = IDLE_RATE;
+        // }
 
-        if self.rate >= MAX_RATE {
-            self.rate = MAX_RATE;
-        }
+        // if self.data.rate >= MAX_RATE {
+        //     self.data.rate = MAX_RATE;
+        // }
 
         self.consume_fuel(0.00005);
 
@@ -363,7 +420,7 @@ mod tests {
 
     #[test]
     fn test_vehicle_init() {
-        let vehicle = Vehicle::new();
+        let vehicle = Vehicle::default();
 
         assert_eq!(vehicle.get_fuel(), MAX_FUEL);
         assert_eq!(vehicle.get_temperature(), INITIAL_TEMPERATURE);
@@ -374,18 +431,18 @@ mod tests {
 
     #[test]
     fn test_vehicle_ignition() {
-        let mut vehicle = Vehicle::new();
+        let mut vehicle = Vehicle::default();
 
-        vehicle.ignition();
+        vehicle.toggle_power();
         assert_eq!(vehicle.is_on(), true);
 
-        vehicle.ignition();
+        vehicle.toggle_power();
         assert_eq!(vehicle.is_on(), false);
     }
 
     #[test]
     fn test_vehicle_refuel() {
-        let mut vehicle = Vehicle::new();
+        let mut vehicle = Vehicle::default();
 
         vehicle.consume_fuel(50.0);
         assert_eq!(vehicle.get_fuel(), MAX_FUEL - 50.0);
@@ -399,8 +456,8 @@ mod tests {
 
     #[test]
     fn test_vehicle_accelerate() {
-        let mut vehicle = Vehicle::new();
-        vehicle.ignition();
+        let mut vehicle = Vehicle::default();
+        vehicle.toggle_power();
         vehicle.shift_gear_up();
         assert_eq!(vehicle.get_speed(), 0.0);
         vehicle.accelerate();
@@ -410,8 +467,8 @@ mod tests {
 
     #[test]
     fn test_vehicle_brake() {
-        let mut vehicle = Vehicle::new();
-        vehicle.ignition();
+        let mut vehicle = Vehicle::default();
+        vehicle.toggle_power();
         vehicle.shift_gear_up();
         vehicle.accelerate();
         assert!(vehicle.get_speed() > 0.0);
@@ -423,8 +480,8 @@ mod tests {
 
     #[test]
     fn test_vehicle_idle_brake() {
-        let mut vehicle = Vehicle::new();
-        vehicle.ignition();
+        let mut vehicle = Vehicle::default();
+        vehicle.toggle_power();
         vehicle.shift_gear_up();
         vehicle.accelerate();
         assert!(vehicle.get_speed() > 0.0);
@@ -436,8 +493,8 @@ mod tests {
 
     #[test]
     fn test_vehicle_shift_gear() {
-        let mut vehicle = Vehicle::new();
-        vehicle.ignition();
+        let mut vehicle = Vehicle::default();
+        vehicle.toggle_power();
         assert_eq!(vehicle.get_gear_str(), "P");
         vehicle.shift_gear_up();
         assert_eq!(vehicle.get_gear_str(), "1");
