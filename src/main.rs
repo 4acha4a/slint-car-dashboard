@@ -1,6 +1,6 @@
 slint::include_modules!();
 
-mod ui;
+mod observer;
 pub mod vehicle;
 pub use vehicle::Vehicle;
 #[cfg(feature = "web")]
@@ -13,10 +13,10 @@ async fn main() {
         web::run_web().await;
     });
 
-    ui::run();
+    observer::run();
 }
 
 #[cfg(not(feature = "web"))]
 fn main() {
-    ui::run();
+    observer::run();
 }
