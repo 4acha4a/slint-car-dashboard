@@ -1,7 +1,7 @@
 import { DataDash } from "./data_dash.slint";
 export component SmallGauge {
     in-out property <length> radius;
-    in property <int> dashboard_value;
+    in-out property <int> dashboard_value;
     in property <int> dashboard_max_value;
     in property <int> dashboard_min_value;
     in property <[float]> pointed-values;
@@ -9,11 +9,31 @@ export component SmallGauge {
     in property <[float]> red-values;
     in property <[float]> init-values;
     in property <[float]> blue-values;
+    in property <bool> engine-on;
     in property <color> image-color: white;
     in property <int> start-from-degree;
     in property <int> end-at-degree;
     in property <length> font-size: 9px;
     in property <image> image;
+    private property <float> displayed-value: dashboard-min-value;
+
+    states [
+        engine-on when root.engine-on: {
+            root.displayed-value: root.dashboard-value;
+            in {
+                animate root.displayed-value {
+                    duration: 500ms;
+                    easing: ease-out-expo;
+                }
+            }
+            out {
+                animate root.displayed-value {
+                    duration: 500ms;
+                    easing: ease-out-expo;
+                }
+            }
+        }
+    ]
     circle:=Rectangle {
         width: radius;
         height: radius;
@@ -104,14 +124,30 @@ export component SmallGauge {
         font-size: font-size;
         min_value: dashboard_min_value;
     }
-    Rectangle {
+    needle := Rectangle {
         width: radius * 0.8;
         height: 1px;
+
         x: circle.x - radius / 32;
         y: circle.y + radius / 1.5;
+
         background: white;
-        border_radius: 0px;
-        transform_rotation: dashboard_value > dashboard_max_value ? (end-at-degree - 15) * 1deg : dashboard_value < dashboard_min_value ? start-from-degree * 1deg + 15deg : start-from-degree * 1deg + 15deg + 1deg * (end-at-degree - start-from-degree - 30) * (dashboard_value - dashboard_min_value) / (dashboard_max_value - dashboard_min_value);
-        transform_origin: {x: -self.x, y: 0px};
+        border-radius: 0px;
+
+        transform-rotation:
+            root.displayed-value > root.dashboard-max-value
+                ? (root.end-at-degree - 15) * 1deg
+                : root.displayed-value < root.dashboard-min-value
+                    ? (root.start-from-degree + 15) * 1deg
+                    : (root.start-from-degree + 15) * 1deg
+                        + 1deg
+                        * (root.end-at-degree - root.start-from-degree - 30)
+                        * (root.displayed-value - root.dashboard-min-value)
+                        / (root.dashboard-max-value - root.dashboard-min-value);
+
+        transform-origin: {
+            x: -self.x,
+            y: 0px
+        };
     }
 }

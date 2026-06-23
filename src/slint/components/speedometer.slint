@@ -2,18 +2,16 @@ import { BigGauge } from "gauge_base/big_gauge.slint";
 import { DashboardState } from "dashboard_state.slint";
 
 export global SpeedometerState {
-    in-out property <int> speed: 0;
+    in-out property <int> speed;
     out property <int> max_speed: 260;
 }
 
 export component Speedometer inherits BigGauge {
     dashboard_value: DashboardState.is_engine_on ? SpeedometerState.speed : 0;
     dashboard_max_value: SpeedometerState.max_speed;
+    engine-on: DashboardState.is_engine_on;
     pointed-values: [20, 40, 60, 80, 100, 120, 140, 160, 180, 200, 220, 240];
     unpointed-values: [10, 30, 50, 70, 90, 110, 130, 150, 170, 190, 210, 230, 250];
     init-values: [0, 260];
     bottom-text: "km/h";
-    animate dashboard_value {
-        easing: ease-out-bounce;
-    }
 }

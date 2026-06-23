@@ -2,7 +2,7 @@ import { SmallGauge } from "gauge_base/small_gauge.slint";
 import { DashboardState } from "dashboard_state.slint";
 
 export global FuelState {
-    in-out property <float> fuel: 0;
+    in-out property <float> fuel;
     out property <float> max_fuel: 100;
 }
 
@@ -13,6 +13,7 @@ export component FuelGauge inherits SmallGauge {
     end-at-degree: 165;
     pointed-values: [0, 30, 60, 100];
     unpointed-values: [15, 45, 75, 90];
+    engine-on: DashboardState.is_engine_on;
     font-size: 6px;
     image: @image-url("../../res/fuel.png");
     dashboard_min_value: 0;

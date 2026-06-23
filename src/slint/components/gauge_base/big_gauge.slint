@@ -2,15 +2,35 @@ import { DataDash } from "./data_dash.slint";
 
 export component BigGauge {
     in-out property <length> radius;
-    in property <float> dashboard_value;
+    in-out property <float> dashboard_value;
     in property <float> dashboard_max_value;
     in property <[float]> pointed-values;
     in property <[float]> unpointed-values;
     in property <[float]> red-values;
     in property <[float]> init-values;
+    in property <bool> engine-on;
     in property <int> start-from-degree: -45;
     in property <int> end-at-degree: 225;
     in property <string> bottom-text: "";
+    private property <float> displayed-value: 0;
+
+    states [
+        engine-on when root.engine-on: {
+            root.displayed-value: root.dashboard-value;
+            in {
+                animate root.displayed-value {
+                    duration: 500ms;
+                    easing: ease-out-expo;
+                }
+            }
+            out {
+                animate root.displayed-value {
+                    duration: 500ms;
+                    easing: ease-out-expo;
+                }
+            }
+        }
+    ]
     circle:=Rectangle {
         width: radius;
         height: radius;
@@ -82,13 +102,35 @@ export component BigGauge {
             vertical_alignment: center;
         }
     }
-    Rectangle {
+    needle := Rectangle {
         width: radius / 1.8;
         height: 2px;
         x: -radius / 2.4;
+
         background: white;
-        border_radius: 0px;
-        transform_rotation: dashboard_value > dashboard_max_value ? end-at-degree * 1deg : start-from-degree * 1deg + 1deg *(end-at-degree - start-from-degree) * dashboard_value / dashboard_max_value;
-        transform_origin: {x: -self.x, y: 0px};
+        border-radius: 0px;
+
+        transform-rotation:
+            root.displayed-value > root.dashboard-max-value
+                ? root.end-at-degree * 1deg
+                : root.start-from-degree * 1deg
+                    + 1deg
+                    * (root.end-at-degree - root.start-from-degree)
+                    * root.displayed-value
+                    / root.dashboard-max-value;
+
+        transform-origin: {
+            x: -self.x,
+            y: 0px
+        };
     }
+    // Rectangle {
+    //     width: radius / 1.8;
+    //     height: 2px;
+    //     x: -radius / 2.4;
+    //     background: white;
+    //     border_radius: 0px;
+    //     transform_rotation: dashboard_value > dashboard_max_value ? end-at-degree * 1deg : start-from-degree * 1deg + 1deg *(end-at-degree - start-from-degree) * dashboard_value / dashboard_max_value;
+    //     transform_origin: {x: -self.x, y: 0px};
+    // }
 }
