@@ -12,3 +12,7 @@ rand= "0.10.1"
 
 [build-dependencies]
 slint-build = { version = "1.16.1" }
+
+[features]
+default = []
+web = ["dep:tokio", "dep:axum", "dep:serde", "dep:reqwest"]
