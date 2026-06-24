@@ -21,6 +21,7 @@ The project is built as a small interactive dashboard simulator. It models basic
 - Fuel consumption
 - Basic automatic gear behavior
 - Background update loop using Slint timers
+- Optional asynchronous telemetry streaming to a local Rust backend using the `web` Cargo feature
 
 ## Roadmap
 
@@ -42,15 +43,49 @@ The project is built as a small interactive dashboard simulator. It models basic
 | `Meta + C` | Quit application |
 
 ## Run
-```
+```sh
 cargo run
 ```
+
+## Web feature
+
+The optional web feature enables asynchronous telemetry streaming to a local Rust backend.
+
+Run the project with web support enabled:
+
+```sh
+cargo run --features web
+```
+
+By default, the backend is available at:
+
+```
+http://127.0.0.1:3000
+```
+
+Available endpoints:
+
+| Method | Endpoint | Description |
+|---|---|---|
+| ```POST``` | ```/data``` | Receives the latest vehicle telemetry from the simulator|
+| ```GET``` | ```/data``` | Returns the latest available vehicle telemetry
+
+Example:
+```sh
+curl http://127.0.0.1:3000/data
+```
+
+The telemetry payload contains the current vehicle state: speed, RPM, fuel level, temperature, engine state, and selected gear.
 
 ## Tech Stack
 
 - Rust
 - Slint
 - rand crate
+- Tokio
+- Axum
+- Serde
+- Reqwest
 
 ## Project Structure
 
@@ -79,6 +114,7 @@ cargo run
     │   │   ├── speedometer.slint
     │   │   └── tachometer.slint
     │   └── main.slint
-    ├── ui.rs
+    ├── observer.rs
+    ├── web.rs
     └── vehicle.rs
 ```
